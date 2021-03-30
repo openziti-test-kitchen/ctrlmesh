@@ -13,7 +13,7 @@ type Agent struct {
 	memberlist *memberlist.Memberlist
 }
 
-func NewAgent(cfg *Config) (*Agent, error) {
+func NewAgent(name string, cfg *Config) (*Agent, error) {
 	mlCfg := memberlist.DefaultLocalConfig()
 
 	bindAddress, bindPort, err := splitAddress(cfg.BindAddress)
@@ -31,6 +31,8 @@ func NewAgent(cfg *Config) (*Agent, error) {
 		mlCfg.AdvertiseAddr = advertiseAddress
 		mlCfg.AdvertisePort = advertisePort
 	}
+
+	mlCfg.Name = name
 
 	ml, err := memberlist.Create(mlCfg)
 	if err != nil {
@@ -52,6 +54,14 @@ func (self *Agent) Join() error {
 		logrus.Infof("joined control plane with [%d] nodes", count)
 	}
 	return nil
+}
+
+func (self *Agent) Status() {
+	nodes := self.memberlist.Members()
+	logrus.Infof("%d nodes:", len(nodes))
+	for i, node := range nodes {
+		logrus.Infof("#%d: %s/%s", i, node.Name, node.Address())
+	}
 }
 
 func splitAddress(addr string) (string, int, error) {
