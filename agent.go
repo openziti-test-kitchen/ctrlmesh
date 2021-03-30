@@ -3,11 +3,13 @@ package ctrlmesh
 import (
 	"github.com/hashicorp/memberlist"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
 
 type Agent struct {
+	cfg        *Config
 	memberlist *memberlist.Memberlist
 }
 
@@ -35,7 +37,21 @@ func NewAgent(cfg *Config) (*Agent, error) {
 		return nil, errors.Wrap(err, "error creating agent")
 	}
 
-	return &Agent{memberlist: ml}, nil
+	return &Agent{
+		cfg:        cfg,
+		memberlist: ml,
+	}, nil
+}
+
+func (self *Agent) Join() error {
+	if self.cfg.InitialPeer != "" {
+		count, err := self.memberlist.Join([]string{self.cfg.InitialPeer})
+		if err != nil {
+			return errors.Wrap(err, "error joining control plane")
+		}
+		logrus.Infof("joined control plane with [%d] nodes", count)
+	}
+	return nil
 }
 
 func splitAddress(addr string) (string, int, error) {
