@@ -1,0 +1,3 @@
+identity: 	    r003
+bind_address: 	127.0.0.1:6002
+initial_peer: 	127.0.0.1:6000

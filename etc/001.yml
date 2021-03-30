@@ -1,1 +1,2 @@
-bind_address: 127.0.0.1:6000
+identity:	    r001
+bind_address: 	127.0.0.1:6000

@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
+	Identity         string `cf:"identity"`
 	BindAddress      string `cf:"bind_address"`
 	AdvertiseAddress string `cf:"advertise_address"`
-	InitialPeer      string `cf:"initial_peer"`
+	InitialPeerList  string `cf:"initial_peer"`
 }
 
 func Load(path string) (*Config, error) {

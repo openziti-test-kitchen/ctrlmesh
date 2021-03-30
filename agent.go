@@ -13,7 +13,7 @@ type Agent struct {
 	memberlist *memberlist.Memberlist
 }
 
-func NewAgent(name string, cfg *Config) (*Agent, error) {
+func NewAgent(cfg *Config) (*Agent, error) {
 	mlCfg := memberlist.DefaultLocalConfig()
 
 	bindAddress, bindPort, err := splitAddress(cfg.BindAddress)
@@ -32,7 +32,7 @@ func NewAgent(name string, cfg *Config) (*Agent, error) {
 		mlCfg.AdvertisePort = advertisePort
 	}
 
-	mlCfg.Name = name
+	mlCfg.Name = cfg.Identity
 
 	ml, err := memberlist.Create(mlCfg)
 	if err != nil {
@@ -46,8 +46,9 @@ func NewAgent(name string, cfg *Config) (*Agent, error) {
 }
 
 func (self *Agent) Join() error {
-	if self.cfg.InitialPeer != "" {
-		count, err := self.memberlist.Join([]string{self.cfg.InitialPeer})
+	initialPeers := strings.Split(self.cfg.InitialPeerList, " ")
+	if self.cfg.InitialPeerList != "" && len(initialPeers) > 0 {
+		count, err := self.memberlist.Join(initialPeers)
 		if err != nil {
 			return errors.Wrap(err, "error joining control plane")
 		}
