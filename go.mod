@@ -2,6 +2,8 @@ module github.com/openziti-incubator/ctrlmesh
 
 go 1.16
 
+replace github.com/hashicorp/memberlist => ../memberlist
+
 require (
 	github.com/hashicorp/memberlist v0.1.5
 	github.com/michaelquigley/pfxlog v0.3.7
