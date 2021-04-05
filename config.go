@@ -12,6 +12,7 @@ type Config struct {
 	BindAddress      string `cf:"bind_address"`
 	AdvertiseAddress string `cf:"advertise_address"`
 	InitialPeerList  string `cf:"initial_peer"`
+	DataListener     string `cf:"data_listener"`
 }
 
 func Load(path string) (*Config, error) {

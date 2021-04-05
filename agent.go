@@ -65,6 +65,23 @@ func (self *Agent) Status() {
 	}
 }
 
+func (self *Agent) Advertise() error {
+	if self.cfg.DataListener != "" {
+		nodes := self.memberlist.Members()
+		for _, node := range nodes {
+			if node != self.memberlist.LocalNode() {
+				err := self.memberlist.SendReliable(node, []byte(self.cfg.DataListener))
+				if err == nil {
+					logrus.Infof("sent advertisement to [%s]", node.Name)
+				} else {
+					return errors.Wrapf(err, "error sending advertisement to [%s]", node.Name)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func splitAddress(addr string) (string, int, error) {
 	tokens := strings.Split(addr, ":")
 	if len(tokens) != 2 {

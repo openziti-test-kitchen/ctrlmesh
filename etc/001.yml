@@ -1,2 +1,3 @@
 identity:	    r001
 bind_address: 	127.0.0.1:6000
+data_listener:	127.0.0.1:7000
