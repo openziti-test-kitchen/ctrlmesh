@@ -32,6 +32,5 @@ func run(_ *cobra.Command, args []string) {
 	for {
 		time.Sleep(5 * time.Second)
 		agent.Status()
-		agent.Advertise()
 	}
 }

@@ -9,8 +9,9 @@ import (
 )
 
 type Agent struct {
-	cfg        *Config
-	memberlist *memberlist.Memberlist
+	cfg           *Config
+	agentDelegate memberlist.Delegate
+	memberlist    *memberlist.Memberlist
 }
 
 func NewAgent(cfg *Config) (*Agent, error) {
@@ -33,6 +34,7 @@ func NewAgent(cfg *Config) (*Agent, error) {
 	}
 
 	mlCfg.Name = cfg.Identity
+	mlCfg.Delegate = &agentDelegate{}
 
 	ml, err := memberlist.Create(mlCfg)
 	if err != nil {
@@ -40,8 +42,9 @@ func NewAgent(cfg *Config) (*Agent, error) {
 	}
 
 	return &Agent{
-		cfg:        cfg,
-		memberlist: ml,
+		cfg:           cfg,
+		agentDelegate: mlCfg.Delegate,
+		memberlist:    ml,
 	}, nil
 }
 
@@ -65,23 +68,6 @@ func (self *Agent) Status() {
 	}
 }
 
-func (self *Agent) Advertise() error {
-	if self.cfg.DataListener != "" {
-		nodes := self.memberlist.Members()
-		for _, node := range nodes {
-			if node != self.memberlist.LocalNode() {
-				err := self.memberlist.SendReliable(node, []byte(self.cfg.DataListener))
-				if err == nil {
-					logrus.Infof("sent advertisement to [%s]", node.Name)
-				} else {
-					return errors.Wrapf(err, "error sending advertisement to [%s]", node.Name)
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func splitAddress(addr string) (string, int, error) {
 	tokens := strings.Split(addr, ":")
 	if len(tokens) != 2 {
@@ -92,4 +78,28 @@ func splitAddress(addr string) (string, int, error) {
 		return "", -1, errors.Wrapf(err, "bad port '%s'", tokens[1])
 	}
 	return tokens[0], port, nil
+}
+
+type agentDelegate struct{}
+
+func (self *agentDelegate) NodeMeta(limit int) []byte {
+	logrus.Infof("limit = %d", limit)
+	return nil
+}
+
+func (self *agentDelegate) NotifyMsg(msg []byte) {
+	logrus.Infof("received msg [%s]", string(msg))
+}
+
+func (self *agentDelegate) GetBroadcasts(overhead, limit int) [][]byte {
+	return nil
+}
+
+func (self *agentDelegate) LocalState(join bool) []byte {
+	logrus.Infof("join = %t", join)
+	return nil
+}
+
+func (self *agentDelegate) MergeRemoteState(buf []byte, join bool) {
+	logrus.Infof("merge [%d] bytes, join = %t", len(buf), join)
 }
