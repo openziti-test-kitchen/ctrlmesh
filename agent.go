@@ -1,6 +1,7 @@
 package ctrlmesh
 
 import (
+	"encoding/json"
 	"github.com/hashicorp/memberlist"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,7 @@ func NewAgent(cfg *Config) (*Agent, error) {
 	}
 
 	mlCfg.Name = cfg.Identity
-	mlCfg.Delegate = &agentDelegate{}
+	mlCfg.Delegate = &agentDelegate{cfg: cfg}
 
 	ml, err := memberlist.Create(mlCfg)
 	if err != nil {
@@ -64,7 +65,7 @@ func (self *Agent) Status() {
 	nodes := self.memberlist.Members()
 	logrus.Infof("%d nodes:", len(nodes))
 	for i, node := range nodes {
-		logrus.Infof("#%d: %s/%s", i, node.Name, node.Address())
+		logrus.Infof("#%d: %s/%s: %s", i, node.Name, node.Address(), string(node.Meta))
 	}
 }
 
@@ -80,10 +81,18 @@ func splitAddress(addr string) (string, int, error) {
 	return tokens[0], port, nil
 }
 
-type agentDelegate struct{}
+type agentDelegate struct{
+	cfg *Config
+}
 
 func (self *agentDelegate) NodeMeta(limit int) []byte {
-	logrus.Infof("limit = %d", limit)
+	state := &State{self.cfg.DataListener}
+	data, err := json.Marshal(state)
+	if err == nil {
+		return data
+	} else {
+		logrus.Errorf("error marshalling local state")
+	}
 	return nil
 }
 
@@ -96,10 +105,13 @@ func (self *agentDelegate) GetBroadcasts(overhead, limit int) [][]byte {
 }
 
 func (self *agentDelegate) LocalState(join bool) []byte {
-	logrus.Infof("join = %t", join)
 	return nil
 }
 
 func (self *agentDelegate) MergeRemoteState(buf []byte, join bool) {
 	logrus.Infof("merge [%d] bytes, join = %t", len(buf), join)
+}
+
+type State struct {
+	DataListener string `json:"dl"`
 }
