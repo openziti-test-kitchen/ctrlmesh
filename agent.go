@@ -1,7 +1,6 @@
 package ctrlmesh
 
 import (
-	"encoding/json"
 	"github.com/hashicorp/memberlist"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -86,13 +85,6 @@ type agentDelegate struct{
 }
 
 func (self *agentDelegate) NodeMeta(limit int) []byte {
-	state := &State{self.cfg.DataListener}
-	data, err := json.Marshal(state)
-	if err == nil {
-		return data
-	} else {
-		logrus.Errorf("error marshalling local state")
-	}
 	return nil
 }
 
