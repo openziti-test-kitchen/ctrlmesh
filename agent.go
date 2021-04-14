@@ -35,6 +35,7 @@ func NewAgent(cfg *Config) (*Agent, error) {
 
 	mlCfg.Name = cfg.Identity
 	mlCfg.Delegate = &agentDelegate{cfg: cfg}
+	mlCfg.Logger = logrus.StandardLogger()
 
 	ml, err := memberlist.Create(mlCfg)
 	if err != nil {
