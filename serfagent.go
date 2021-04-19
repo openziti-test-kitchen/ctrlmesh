@@ -34,6 +34,7 @@ func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
 		sCfg.MemberlistConfig.AdvertisePort = advertisePort
 	}
 	sCfg.NodeName = cfg.Identity
+	sCfg.Logger = logrus.StandardLogger()
 
 	eventCh := make(chan serf.Event, 4)
 	sCfg.EventCh = eventCh
