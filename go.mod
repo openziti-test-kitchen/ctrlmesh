@@ -5,7 +5,8 @@ go 1.16
 replace github.com/hashicorp/memberlist => ../memberlist
 
 require (
-	github.com/hashicorp/memberlist v0.1.5
+	github.com/hashicorp/memberlist v0.2.2
+	github.com/hashicorp/serf v0.9.5
 	github.com/michaelquigley/pfxlog v0.3.7
 	github.com/openziti/dilithium v0.3.3
 	github.com/pkg/errors v0.9.1
