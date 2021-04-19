@@ -44,11 +44,17 @@ func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
 }
 
 func (self *SerfAgent) Join() error {
+	tags := make(map[string]string)
+	tags["data_listener"] = self.cfg.DataListener
+
 	initialPeers := strings.Split(self.cfg.InitialPeerList, " ")
 	if self.cfg.InitialPeerList != "" && len(initialPeers) > 0 {
 		count, err := self.serf.Join(initialPeers, false)
 		if err != nil {
 			return errors.Wrap(err, "error joining control plane")
+		}
+		if err := self.serf.SetTags(tags); err != nil {
+			return errors.Wrap(err, "error setting node tags")
 		}
 		logrus.Infof("joined control plane with [%d] nodes", count)
 	}
@@ -59,6 +65,6 @@ func (self *SerfAgent) Status() {
 	nodes := self.serf.Members()
 	logrus.Infof("%d nodes:", len(nodes))
 	for i, node := range nodes {
-		logrus.Infof("#%d %s/%s", i, node.Name, node.Addr)
+		logrus.Infof("#%d %s/%s (%v)", i, node.Name, node.Addr, node.Tags)
 	}
 }
