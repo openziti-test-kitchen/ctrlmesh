@@ -10,11 +10,11 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
-var runCmd = &cobra.Command{
-	Use:   "run <config.yml>",
+var runCmd = &cobra.Command {
+	Use: "run <config.yml>",
 	Short: "Run ctrlmesh agent",
-	Args:  cobra.ExactArgs(1),
-	Run:   run,
+	Args: cobra.ExactArgs(1),
+	Run: run,
 }
 
 func run(_ *cobra.Command, args []string) {
@@ -22,7 +22,7 @@ func run(_ *cobra.Command, args []string) {
 	if err != nil {
 		panic(err)
 	}
-	agent, err := ctrlmesh.NewAgent(cfg)
+	agent, err := ctrlmesh.NewSerfAgent(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -32,5 +32,6 @@ func run(_ *cobra.Command, args []string) {
 	for {
 		time.Sleep(5 * time.Second)
 		agent.Status()
+		agent.Query()
 	}
 }

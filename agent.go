@@ -1,110 +1,119 @@
 package ctrlmesh
 
 import (
-	"github.com/hashicorp/memberlist"
+	"fmt"
+	"github.com/hashicorp/serf/serf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"strconv"
 	"strings"
+	"time"
 )
 
-type Agent struct {
-	cfg           *Config
-	agentDelegate memberlist.Delegate
-	memberlist    *memberlist.Memberlist
+type SerfAgent struct {
+	cfg     *Config
+	serf    *serf.Serf
+	eventCh chan serf.Event
 }
 
-func NewAgent(cfg *Config) (*Agent, error) {
-	mlCfg := memberlist.DefaultLocalConfig()
+func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
+	sCfg := serf.DefaultConfig()
 
 	bindAddress, bindPort, err := splitAddress(cfg.BindAddress)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid bind_address '%s'", cfg.BindAddress)
 	}
-	mlCfg.BindAddr = bindAddress
-	mlCfg.BindPort = bindPort
+	sCfg.MemberlistConfig.BindAddr = bindAddress
+	sCfg.MemberlistConfig.BindPort = bindPort
 
 	if cfg.AdvertiseAddress != "" {
 		advertiseAddress, advertisePort, err := splitAddress(cfg.AdvertiseAddress)
 		if err != nil {
 			return nil, errors.Wrapf(err, "invalid advertise_address '%s'", cfg.AdvertiseAddress)
 		}
-		mlCfg.AdvertiseAddr = advertiseAddress
-		mlCfg.AdvertisePort = advertisePort
+		sCfg.MemberlistConfig.AdvertiseAddr = advertiseAddress
+		sCfg.MemberlistConfig.AdvertisePort = advertisePort
 	}
+	sCfg.NodeName = cfg.Identity
+	sCfg.Logger = logrus.StandardLogger()
 
-	mlCfg.Name = cfg.Identity
-	mlCfg.Delegate = &agentDelegate{cfg: cfg}
-	mlCfg.Logger = logrus.StandardLogger()
+	eventCh := make(chan serf.Event, 4)
+	sCfg.EventCh = eventCh
 
-	ml, err := memberlist.Create(mlCfg)
+	sf, err := serf.Create(sCfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "error creating agent")
+		return nil, errors.Wrap(err, "error creating serf")
 	}
 
-	return &Agent{
-		cfg:           cfg,
-		agentDelegate: mlCfg.Delegate,
-		memberlist:    ml,
-	}, nil
+	agent := &SerfAgent{
+		cfg:     cfg,
+		serf:    sf,
+		eventCh: eventCh,
+	}
+	go agent.handleEvents()
+
+	return agent, nil
 }
 
-func (self *Agent) Join() error {
+func (self *SerfAgent) Join() error {
+	tags := make(map[string]string)
+	tags["data_listener"] = self.cfg.DataListener
+
 	initialPeers := strings.Split(self.cfg.InitialPeerList, " ")
 	if self.cfg.InitialPeerList != "" && len(initialPeers) > 0 {
-		count, err := self.memberlist.Join(initialPeers)
+		count, err := self.serf.Join(initialPeers, false)
 		if err != nil {
 			return errors.Wrap(err, "error joining control plane")
+		}
+		if err := self.serf.SetTags(tags); err != nil {
+			return errors.Wrap(err, "error setting node tags")
 		}
 		logrus.Infof("joined control plane with [%d] nodes", count)
 	}
 	return nil
 }
 
-func (self *Agent) Status() {
-	nodes := self.memberlist.Members()
+func (self *SerfAgent) Status() {
+	nodes := self.serf.Members()
 	logrus.Infof("%d nodes:", len(nodes))
 	for i, node := range nodes {
-		logrus.Infof("#%d: %s/%s: %s", i, node.Name, node.Address(), string(node.Meta))
+		logrus.Infof("#%d %s/%s (%v)", i, node.Name, node.Addr, node.Tags)
 	}
 }
 
-func splitAddress(addr string) (string, int, error) {
-	tokens := strings.Split(addr, ":")
-	if len(tokens) != 2 {
-		return "", -1, errors.Errorf("malformed address '%s'", addr)
-	}
-	port, err := strconv.Atoi(tokens[1])
+func (self *SerfAgent) Query() {
+	params := self.serf.DefaultQueryParams()
+	params.FilterNodes = []string{"r002"}
+	response, err := self.serf.Query("hello", []byte("oh, wow!"), params)
 	if err != nil {
-		return "", -1, errors.Wrapf(err, "bad port '%s'", tokens[1])
+		logrus.Errorf("query failed (%v)", err)
 	}
-	return tokens[0], port, nil
+	select {
+	case rv := <-response.ResponseCh():
+		logrus.Infof("response: from:%s: %s", rv.From, string(rv.Payload))
+		response.Close()
+
+	case <-time.After(2 * time.Second):
+		logrus.Warnf("no response")
+		response.Close()
+	}
 }
 
-type agentDelegate struct{
-	cfg *Config
-}
+func (self *SerfAgent) handleEvents() {
+	for {
+		select {
+		case event := <-self.eventCh:
 
-func (self *agentDelegate) NodeMeta(limit int) []byte {
-	return nil
-}
-
-func (self *agentDelegate) NotifyMsg(msg []byte) {
-	logrus.Infof("received msg [%s]", string(msg))
-}
-
-func (self *agentDelegate) GetBroadcasts(overhead, limit int) [][]byte {
-	return nil
-}
-
-func (self *agentDelegate) LocalState(join bool) []byte {
-	return nil
-}
-
-func (self *agentDelegate) MergeRemoteState(buf []byte, join bool) {
-	logrus.Infof("merge [%d] bytes, join = %t", len(buf), join)
-}
-
-type State struct {
-	DataListener string `json:"dl"`
+			if event.EventType() == serf.EventQuery {
+				query := event.(*serf.Query)
+				logrus.Infof("received query [%s]", query)
+				if query.Name == "hello" {
+					if err := query.Respond([]byte(fmt.Sprintf("heard: [%s]", string(query.Payload)))); err != nil {
+						logrus.Errorf("error responding (%v)", err)
+					}
+				}
+			} else {
+				logrus.Infof("received [%s]", event)
+			}
+		}
+	}
 }

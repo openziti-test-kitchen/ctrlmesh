@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	pfxlog.Global(logrus.DebugLevel)
+	pfxlog.Global(logrus.InfoLevel)
 	pfxlog.SetPrefix("github.com/openziti-incubator/")
 }
 
@@ -21,6 +21,6 @@ func main() {
 }
 
 var rootCmd = &cobra.Command{
-	Use: strings.TrimSuffix(filepath.Base(os.Args[0]), filepath.Ext(os.Args[0])),
+	Use:   strings.TrimSuffix(filepath.Base(os.Args[0]), filepath.Ext(os.Args[0])),
 	Short: "Distributed Control Plane",
 }
