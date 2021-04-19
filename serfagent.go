@@ -54,3 +54,11 @@ func (self *SerfAgent) Join() error {
 	}
 	return nil
 }
+
+func (self *SerfAgent) Status() {
+	nodes := self.serf.Members()
+	logrus.Infof("%d nodes:", len(nodes))
+	for i, node := range nodes {
+		logrus.Infof("#%d %s/%s", i, node.Name, node.Addr)
+	}
+}
