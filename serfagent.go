@@ -9,8 +9,9 @@ import (
 )
 
 type SerfAgent struct {
-	cfg  *Config
-	serf *serf.Serf
+	cfg     *Config
+	serf    *serf.Serf
+	eventCh chan serf.Event
 }
 
 func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
@@ -33,15 +34,21 @@ func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
 	}
 	sCfg.NodeName = cfg.Identity
 
+	eventCh := make(chan serf.Event, 4)
+	sCfg.EventCh = eventCh
+
 	sf, err := serf.Create(sCfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating serf")
 	}
 
 	agent := &SerfAgent{
-		cfg:  cfg,
-		serf: sf,
+		cfg:     cfg,
+		serf:    sf,
+		eventCh: eventCh,
 	}
+	go agent.handleEvents()
+
 	return agent, nil
 }
 
@@ -84,5 +91,14 @@ func (self *SerfAgent) Query() {
 	case <-time.After(2 * time.Second):
 		logrus.Warnf("no response")
 		response.Close()
+	}
+}
+
+func (self *SerfAgent) handleEvents() {
+	for {
+		select {
+		case event := <-self.eventCh:
+			logrus.Infof("received [%s]", event)
+		}
 	}
 }
