@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type SerfAgent struct {
 	cfg     *Config
 	serf    *serf.Serf
 	eventCh chan serf.Event
+	counter int32
 }
 
 func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
@@ -107,7 +109,8 @@ func (self *SerfAgent) handleEvents() {
 				query := event.(*serf.Query)
 				logrus.Infof("received query [%s]", query)
 				if query.Name == "hello" {
-					if err := query.Respond([]byte(fmt.Sprintf("heard: [%s]", string(query.Payload)))); err != nil {
+					counter := atomic.AddInt32(&self.counter, 1)
+					if err := query.Respond([]byte(fmt.Sprintf("%d", counter))); err != nil {
 						logrus.Errorf("error responding (%v)", err)
 					}
 				}
