@@ -1,6 +1,7 @@
 package ctrlmesh
 
 import (
+	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -99,6 +100,14 @@ func (self *SerfAgent) handleEvents() {
 		select {
 		case event := <-self.eventCh:
 			logrus.Infof("received [%s]", event)
+			if event.EventType() == serf.EventQuery {
+				query := event.(*serf.Query)
+				if query.Name == "hello" {
+					if err := query.Respond([]byte(fmt.Sprintf("heard: [%s]", string(query.Payload)))); err != nil {
+						logrus.Errorf("error responding (%v)", err)
+					}
+				}
+			}
 		}
 	}
 }
