@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 type SerfAgent struct {
@@ -37,10 +38,11 @@ func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
 		return nil, errors.Wrap(err, "error creating serf")
 	}
 
-	return &SerfAgent{
+	agent := &SerfAgent{
 		cfg:  cfg,
 		serf: sf,
-	}, nil
+	}
+	return agent, nil
 }
 
 func (self *SerfAgent) Join() error {
@@ -66,5 +68,21 @@ func (self *SerfAgent) Status() {
 	logrus.Infof("%d nodes:", len(nodes))
 	for i, node := range nodes {
 		logrus.Infof("#%d %s/%s (%v)", i, node.Name, node.Addr, node.Tags)
+	}
+}
+
+func (self *SerfAgent) Query() {
+	response, err := self.serf.Query("hello", []byte("oh, wow!"), self.serf.DefaultQueryParams())
+	if err != nil {
+		logrus.Errorf("query failed (%v)", err)
+	}
+	select {
+	case rv := <-response.ResponseCh():
+		logrus.Infof("response: @%s: %s", rv.From, string(rv.Payload))
+		response.Close()
+
+	case <-time.After(2 * time.Second):
+		logrus.Warnf("no response")
+		response.Close()
 	}
 }

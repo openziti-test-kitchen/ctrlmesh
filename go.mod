@@ -4,6 +4,8 @@ go 1.16
 
 replace github.com/hashicorp/memberlist => ../memberlist
 
+replace github.com/hashicorp/serf => ../serf
+
 require (
 	github.com/hashicorp/memberlist v0.2.2
 	github.com/hashicorp/serf v0.9.5
