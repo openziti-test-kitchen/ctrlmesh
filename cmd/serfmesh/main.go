@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	pfxlog.Global(logrus.DebugLevel)
+	pfxlog.Global(logrus.InfoLevel)
 	pfxlog.SetPrefix("github.com/openziti-incubator/")
 }
 

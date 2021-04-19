@@ -81,13 +81,15 @@ func (self *SerfAgent) Status() {
 }
 
 func (self *SerfAgent) Query() {
-	response, err := self.serf.Query("hello", []byte("oh, wow!"), self.serf.DefaultQueryParams())
+	params := self.serf.DefaultQueryParams()
+	params.FilterNodes = []string{"r002"}
+	response, err := self.serf.Query("hello", []byte("oh, wow!"), params)
 	if err != nil {
 		logrus.Errorf("query failed (%v)", err)
 	}
 	select {
 	case rv := <-response.ResponseCh():
-		logrus.Infof("response: @%s: %s", rv.From, string(rv.Payload))
+		logrus.Infof("response: from:%s: %s", rv.From, string(rv.Payload))
 		response.Close()
 
 	case <-time.After(2 * time.Second):
@@ -100,14 +102,17 @@ func (self *SerfAgent) handleEvents() {
 	for {
 		select {
 		case event := <-self.eventCh:
-			logrus.Infof("received [%s]", event)
+
 			if event.EventType() == serf.EventQuery {
 				query := event.(*serf.Query)
+				logrus.Infof("received query [%s]", query)
 				if query.Name == "hello" {
 					if err := query.Respond([]byte(fmt.Sprintf("heard: [%s]", string(query.Payload)))); err != nil {
 						logrus.Errorf("error responding (%v)", err)
 					}
 				}
+			} else {
+				logrus.Infof("received [%s]", event)
 			}
 		}
 	}
