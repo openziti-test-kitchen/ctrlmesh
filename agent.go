@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-type SerfAgent struct {
+type Agent struct {
 	cfg     *Config
 	serf    *serf.Serf
 	eventCh chan serf.Event
 	counter int32
 }
 
-func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
+func NewAgent(cfg *Config) (*Agent, error) {
 	sCfg := serf.DefaultConfig()
 
 	bindAddress, bindPort, err := splitAddress(cfg.BindAddress)
@@ -46,7 +46,7 @@ func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
 		return nil, errors.Wrap(err, "error creating serf")
 	}
 
-	agent := &SerfAgent{
+	agent := &Agent{
 		cfg:     cfg,
 		serf:    sf,
 		eventCh: eventCh,
@@ -56,7 +56,7 @@ func NewSerfAgent(cfg *Config) (*SerfAgent, error) {
 	return agent, nil
 }
 
-func (self *SerfAgent) Join() error {
+func (self *Agent) Join() error {
 	tags := make(map[string]string)
 	tags["data_listener"] = self.cfg.DataListener
 
@@ -74,15 +74,15 @@ func (self *SerfAgent) Join() error {
 	return nil
 }
 
-func (self *SerfAgent) Status() {
+func (self *Agent) Status() {
 	nodes := self.serf.Members()
 	logrus.Infof("%d nodes:", len(nodes))
 	for i, node := range nodes {
-		logrus.Infof("#%d %s/%s (%v) {%s}", i, node.Name, node.Addr, node.Tags, node.Status)
+		logrus.Infof("#%d {%s} %s/%s (%v) ", i, node.Status, node.Name, node.Addr, node.Tags)
 	}
 }
 
-func (self *SerfAgent) Query() {
+func (self *Agent) Query() {
 	params := self.serf.DefaultQueryParams()
 	params.FilterNodes = []string{"r002"}
 	response, err := self.serf.Query("hello", []byte("oh, wow!"), params)
@@ -100,7 +100,7 @@ func (self *SerfAgent) Query() {
 	}
 }
 
-func (self *SerfAgent) handleEvents() {
+func (self *Agent) handleEvents() {
 	for {
 		select {
 		case event := <-self.eventCh:

@@ -22,7 +22,7 @@ func run(_ *cobra.Command, args []string) {
 	if err != nil {
 		panic(err)
 	}
-	agent, err := ctrlmesh.NewSerfAgent(cfg)
+	agent, err := ctrlmesh.NewAgent(cfg)
 	if err != nil {
 		panic(err)
 	}
