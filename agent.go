@@ -78,7 +78,7 @@ func (self *SerfAgent) Status() {
 	nodes := self.serf.Members()
 	logrus.Infof("%d nodes:", len(nodes))
 	for i, node := range nodes {
-		logrus.Infof("#%d %s/%s (%v)", i, node.Name, node.Addr, node.Tags)
+		logrus.Infof("#%d %s/%s (%v) {%s}", i, node.Name, node.Addr, node.Tags, node.Status)
 	}
 }
 
