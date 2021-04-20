@@ -10,11 +10,11 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
-var runCmd = &cobra.Command {
-	Use: "run <config.yml>",
+var runCmd = &cobra.Command{
+	Use:   "run <config.yml>",
 	Short: "Run ctrlmesh agent",
-	Args: cobra.ExactArgs(1),
-	Run: run,
+	Args:  cobra.ExactArgs(1),
+	Run:   run,
 }
 
 func run(_ *cobra.Command, args []string) {
