@@ -2,6 +2,9 @@ package main
 
 import (
 	"github.com/michaelquigley/pfxlog"
+	"github.com/openziti/foundation/transport"
+	"github.com/openziti/foundation/transport/tcp"
+	"github.com/openziti/foundation/transport/tls"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -12,6 +15,8 @@ import (
 func init() {
 	pfxlog.Global(logrus.InfoLevel)
 	pfxlog.SetPrefix("github.com/openziti-incubator/")
+	transport.AddAddressParser(tcp.AddressParser{})
+	transport.AddAddressParser(tls.AddressParser{})
 }
 
 func main() {

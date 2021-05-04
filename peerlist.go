@@ -1,6 +1,10 @@
 package ctrlmesh
 
-import "github.com/openziti/foundation/transport"
+import (
+	"github.com/openziti/foundation/transport"
+	"github.com/pkg/errors"
+	"reflect"
+)
 
 type PeerList struct {
 	cfg   *PeerListConfig
@@ -9,5 +13,33 @@ type PeerList struct {
 }
 
 type PeerListConfig struct {
-	initialPeerAds []transport.Address
+	initialPeers []transport.Address
+	listeners      []transport.Address
+	ads            []transport.Address
+}
+
+func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
+	plc := &PeerListConfig{}
+
+	if v, found := data["initial_peers"]; found {
+		subarr, ok := v.([]interface{})
+		if !ok {
+			return nil, errors.Errorf("mailformed 'initial_peers' list (%s)", reflect.TypeOf(subarr))
+		}
+		for _, v := range subarr {
+			initialPeer, ok := v.(string)
+			if !ok {
+				return nil, errors.Errorf("malformed initial peer (%s)", reflect.TypeOf(v))
+			}
+			initialPeerAddr, err := transport.ParseAddress(initialPeer)
+			if err != nil {
+				return nil, errors.Wrapf(err, "error parsing 'initial_peers' list [%s]", initialPeer)
+			}
+			plc.initialPeers = append(plc.initialPeers, initialPeerAddr)
+		}
+	} else {
+		return nil, errors.New("no 'initial_peers' specified")
+	}
+
+	return plc, nil
 }
