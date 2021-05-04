@@ -14,8 +14,8 @@ type PeerList struct {
 
 type PeerListConfig struct {
 	initialPeers []transport.Address
-	listeners      []transport.Address
-	ads            []transport.Address
+	listeners    []transport.Address
+	ads          []transport.Address
 }
 
 func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
@@ -33,12 +33,30 @@ func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
 			}
 			initialPeerAddr, err := transport.ParseAddress(initialPeer)
 			if err != nil {
-				return nil, errors.Wrapf(err, "error parsing 'initial_peers' list [%s]", initialPeer)
+				return nil, errors.Wrapf(err, "error parsing 'initial_peers' address [%s]", initialPeer)
 			}
 			plc.initialPeers = append(plc.initialPeers, initialPeerAddr)
 		}
 	} else {
 		return nil, errors.New("no 'initial_peers' specified")
+	}
+
+	if v, found := data["listeners"]; found {
+		subarr, ok := v.([]interface{})
+		if !ok {
+			return nil, errors.Errorf("malformed 'listeners' list (%s)", reflect.TypeOf(subarr))
+		}
+		for _, v := range subarr {
+			listener, ok := v.(string)
+			if !ok {
+				return nil, errors.Errorf("malformed listener (%s)", reflect.TypeOf(v))
+			}
+			listenerAddr, err := transport.ParseAddress(listener)
+			if err != nil {
+				return nil, errors.Wrapf(err, "error parsing 'listener' address [%s]", listener)
+			}
+			plc.listeners = append(plc.listeners, listenerAddr)
+		}
 	}
 
 	return plc, nil
