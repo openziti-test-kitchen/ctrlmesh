@@ -11,13 +11,13 @@ import (
 )
 
 type Agent struct {
-	cfg     *Config
+	cfg     *AgentConfig
 	serf    *serf.Serf
 	eventCh chan serf.Event
 	counter int32
 }
 
-func NewAgent(cfg *Config) (*Agent, error) {
+func NewAgent(cfg *AgentConfig) (*Agent, error) {
 	sCfg := serf.DefaultConfig()
 
 	bindAddress, bindPort, err := splitAddress(cfg.BindAddress)

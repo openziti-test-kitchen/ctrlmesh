@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 )
 
-type Config struct {
+type AgentConfig struct {
 	Identity         string `cf:"identity"`
 	BindAddress      string `cf:"bind_address"`
 	AdvertiseAddress string `cf:"advertise_address"`
@@ -15,7 +15,7 @@ type Config struct {
 	DataListener     string `cf:"data_listener"`
 }
 
-func Load(path string) (*Config, error) {
+func Load(path string) (*AgentConfig, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error reading config '%s'", path)
@@ -24,7 +24,7 @@ func Load(path string) (*Config, error) {
 	if err = yaml.Unmarshal(data, dataMap); err != nil {
 		return nil, errors.Wrapf(err, "unable to unmarshal config '%s'", path)
 	}
-	cfg := &Config{}
+	cfg := &AgentConfig{}
 	if err := cf.Load(cf.MapIToMapS(dataMap), cfg); err != nil {
 		return nil, errors.Wrapf(err, "unable to load config '%s'", path)
 	}
