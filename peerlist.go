@@ -15,7 +15,7 @@ type PeerList struct {
 type PeerListConfig struct {
 	initialPeers []transport.Address
 	listeners    []transport.Address
-	ads          []transport.Address
+	advertise    []transport.Address
 }
 
 func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
@@ -56,6 +56,24 @@ func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
 				return nil, errors.Wrapf(err, "error parsing 'listener' address [%s]", listener)
 			}
 			plc.listeners = append(plc.listeners, listenerAddr)
+		}
+	}
+
+	if v, found := data["ads"]; found {
+		subarr, ok := v.([]interface{})
+		if !ok {
+			return nil, errors.Errorf("malformed 'advertise' list (%s)", reflect.TypeOf(subarr))
+		}
+		for _, v := range subarr {
+			advertise, ok := v.(string)
+			if !ok {
+				return nil, errors.Errorf("malformed 'advertise' list (%s)", reflect.TypeOf(subarr))
+			}
+			advertiseAddr, err := transport.ParseAddress(advertise)
+			if err != nil {
+				return nil, errors.Wrapf(err, "error parsing 'advertise' address [%s]", advertise)
+			}
+			plc.advertise = append(plc.advertise, advertiseAddr)
 		}
 	}
 
