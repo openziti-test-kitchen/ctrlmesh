@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package peerlist;
+
+enum MessageType {
+  Zero = 0;
+  FullState = 1;
+}
+
+message PeerMessage {
+  string id = 1;
+  repeated string ads = 2;
+  uint32 updated = 3;
+}
+
+message FullStateMessage {
+  repeated PeerMessage peers = 1;
+}
