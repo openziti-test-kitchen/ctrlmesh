@@ -14,7 +14,7 @@ type PeerListConfig struct {
 	advertise    []transport.Address
 }
 
-func LoadPeerListConfig(path string) (*PeerListConfig, error) {
+func LoadPeerListConfigYaml(path string) (*PeerListConfig, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error reading data from [%s]", path)
@@ -23,10 +23,10 @@ func LoadPeerListConfig(path string) (*PeerListConfig, error) {
 	if err := yaml.Unmarshal(data, dataMap); err != nil {
 		return nil, errors.Wrapf(err, "error unmarshaling from [%s]", path)
 	}
-	return MapPeerListConfig(dataMap)
+	return LoadPeerListConfig(dataMap)
 }
 
-func MapPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
+func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
 	plc := &PeerListConfig{}
 
 	if v, found := data["initial_peers"]; found {

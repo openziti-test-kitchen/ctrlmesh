@@ -17,7 +17,7 @@ var peerlistCmd = &cobra.Command{
 }
 
 func peerlist(_ *cobra.Command, args []string) {
-	if _, err := ctrlmesh.LoadPeerListConfig(args[0]); err != nil {
+	if _, err := ctrlmesh.LoadPeerListConfigYaml(args[0]); err != nil {
 		panic(err)
 	}
 }
