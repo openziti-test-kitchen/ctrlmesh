@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-package peerlist;
+package ctrlmesh;
+option go_package = "github.com/openziti-incubator/ctrlmesh";
 
 enum MessageType {
   Zero = 0;
