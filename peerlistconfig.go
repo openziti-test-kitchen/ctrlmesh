@@ -9,6 +9,7 @@ import (
 )
 
 type PeerListConfig struct {
+	id           string
 	initialPeers []transport.Address
 	listeners    []transport.Address
 	advertise    []transport.Address
@@ -28,6 +29,16 @@ func LoadPeerListConfigYaml(path string) (*PeerListConfig, error) {
 
 func LoadPeerListConfig(data map[string]interface{}) (*PeerListConfig, error) {
 	plc := &PeerListConfig{}
+
+	if v, found := data["id"]; found {
+		idStr, ok := v.(string)
+		if !ok {
+			return nil, errors.Errorf("malformed 'id' (%s)", reflect.TypeOf(v))
+		}
+		plc.id = idStr
+	} else {
+		return nil, errors.New("no 'id' specified")
+	}
 
 	if v, found := data["initial_peers"]; found {
 		subarr, ok := v.([]interface{})

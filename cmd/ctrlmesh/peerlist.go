@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/openziti-incubator/ctrlmesh"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 func init() {
@@ -17,7 +18,12 @@ var peerlistCmd = &cobra.Command{
 }
 
 func peerlist(_ *cobra.Command, args []string) {
-	if _, err := ctrlmesh.LoadPeerListConfigYaml(args[0]); err != nil {
+	cfg, err := ctrlmesh.LoadPeerListConfigYaml(args[0])
+	if err != nil {
 		panic(err)
+	}
+	_, err = ctrlmesh.NewPeerList(cfg)
+	for {
+		time.Sleep(30 * time.Second)
 	}
 }
